@@ -28,7 +28,7 @@ func (a *appDependencies) writeJSON(w http.ResponseWriter, status int, data any,
 
 	jsResponse = append(jsResponse, '\n')
 	for key, value := range headers {
-		w.Header().Set(key, value)
+		w.Header()[key] = value
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
