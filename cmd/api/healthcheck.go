@@ -12,21 +12,27 @@ func (a *appDependencies) healthCheckHandler(w http.ResponseWriter, r *http.Requ
 		"version":     appVersion,
 	}
 
-	jsResponse, err := json.Marshal(data)
+	err := a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
 		a.logger.Error(err.Error())
 		http.Error(w, "The server encountered an issue and was not able to process your request", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (a *appDependencies) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
+	jsResponse, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
 
 	jsResponse = append(jsResponse, '\n')
-	// jsResponse := `{"status": "available", "environment": %q, "version": %q}`
-
-	// jsResponse = fmt.Sprintf(jsResponse, a.config.env, appVersion)
-
+	for key, value := range headers {
+		w.Header().Set(key, value)
+	}
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	w.Write(jsResponse)
-	// fmt.Fprintln(w, "Status: available")
-	// fmt.Fprintf(w, "Env: %s\n", a.config.env)
-	// fmt.Fprintf(w, "Version: %s\n", appVersion)
+
+	return nil
 }
