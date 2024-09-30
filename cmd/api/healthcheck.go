@@ -5,11 +5,15 @@ import (
 	"net/http"
 )
 
+type envelope map[string]any
+
 func (a *appDependencies) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	data := map[string]string{
-		"status":      "available",
-		"environment": a.config.env,
-		"version":     appVersion,
+	data := envelope{
+		"status": "available",
+		"system_info": map[string]string{
+			"environment": a.config.env,
+			"version":     appVersion,
+		},
 	}
 
 	err := a.writeJSON(w, http.StatusOK, data, nil)
@@ -19,7 +23,7 @@ func (a *appDependencies) healthCheckHandler(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (a *appDependencies) writeJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
+func (a *appDependencies) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	jsResponse, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
