@@ -8,6 +8,8 @@ import (
 type envelope map[string]any
 
 func (a *appDependencies) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	panic("apples and orange")
+
 	data := envelope{
 		"status": "available",
 		"system_info": map[string]string{
