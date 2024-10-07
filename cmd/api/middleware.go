@@ -14,6 +14,6 @@ func (a *appDependencies) recoverPanic(next http.Handler) http.Handler {
 				a.serverErrResponse(w, r, fmt.Errorf("%s", err))
 			}
 		}()
+		next.ServeHTTP(w, r)
 	})
-	next.ServeHTTP(w, r)
 }
