@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -14,9 +13,9 @@ func (a *appDependencies) createCommentHandler(w http.ResponseWriter, r *http.Re
 		Author  string `json:"author"`
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&incomingData)
+	err := a.readJSON(w, r, &incomingData)
 	if err != nil {
-		a.errResponseJSON(w, r, http.StatusBadRequest, err.Error())
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
