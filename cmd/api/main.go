@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	_ "github.com/lib/pq v1.10.9"
 )
 
 const appVersion = "1.0.0"

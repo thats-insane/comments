@@ -6,16 +6,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type envelope map[string]any
 
 func (a *appDependencies) readJSON(w http.ResponseWriter, r *http.Request, destination any) error {
-	err := json.NewDecoder(r.Body).Decode(destination)
+	maxBytes := 256_000
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	err := decoder.Decode(destination)
+
+	// err = json.NewDecoder(r.Body).Decode(destination)
 	if err != nil {
 		var syntaxErr *json.SyntaxError
 		var unmarshalTypeErr *json.UnmarshalTypeError
 		var invalidUnmarshalErr *json.InvalidUnmarshalError
+		var maxBytesErr *http.MaxBytesError
 
 		switch {
 		case errors.As(err, &syntaxErr):
@@ -29,11 +38,22 @@ func (a *appDependencies) readJSON(w http.ResponseWriter, r *http.Request, desti
 			return fmt.Errorf("the body contains the incorrect JSON type (at character %d)", unmarshalTypeErr.Offset)
 		case errors.Is(err, io.EOF):
 			return errors.New("the body must not be empty")
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unkown field ")
+			return fmt.Errorf("body contains unknown key %s", fieldName)
+		case errors.As(err, &maxBytesErr):
+			return fmt.Errorf("the body must not be larger than %d bytes", maxBytesErr.Limit)
 		case errors.As(err, &invalidUnmarshalErr):
 			panic(err)
 		default:
 			return err
 		}
+	}
+
+	err = decoder.Decode(&struct{}{})
+
+	if !errors.Is(err, io.EOF) {
+		return errors.New("the body must only contain a single JSON value")
 	}
 
 	return nil
