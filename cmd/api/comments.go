@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -55,5 +56,36 @@ func (a *appDependencies) createCommentHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	fmt.Fprintf(w, "%+v\n", incomingData)
+}
 
+func (a *appDependencies) displayCommentHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	comment, err := a.commentModel.Get(id)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrResponse(w, r, err)
+		}
+
+		return
+	}
+
+	data := envelope{
+		"comment": comment,
+	}
+
+	err = a.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		a.serverErrResponse(w, r, err)
+		return
+	}
 }

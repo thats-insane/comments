@@ -12,6 +12,7 @@ func (a *appDependencies) routes() http.Handler {
 	router.NotFound = http.HandlerFunc(a.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(a.notAllowedResponse)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", a.healthCheckHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.displayCommentHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/comments", a.createCommentHandler)
 	return a.recoverPanic(router)
 }
