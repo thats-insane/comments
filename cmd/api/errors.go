@@ -41,3 +41,7 @@ func (a *appDependencies) notAllowedResponse(w http.ResponseWriter, r *http.Requ
 func (a *appDependencies) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
 	a.errResponseJSON(w, r, http.StatusBadRequest, err.Error())
 }
+
+func (a *appDependencies) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	a.errResponseJSON(w, r, http.StatusUnprocessableEntity, errors)
+}

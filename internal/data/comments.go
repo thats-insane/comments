@@ -1,11 +1,22 @@
 package data
 
-import "time"
+import (
+	"time"
+
+	"github.com/thats-insane/comments/internal/validator"
+)
 
 type Comment struct {
-	ID        int64
-	Content   string
-	Author    string
-	CreatedAt time.Time
-	Version   int32
+	ID        int64     `json:"id"`
+	Content   string    `json:"content"`
+	Author    string    `json:"author"`
+	CreatedAt time.Time `json:"-"`
+	Version   int32     `json:"version"`
+}
+
+func ValidateComment(v *validator.Validator, comment *Comment) {
+	v.Check(comment.Content != "", "content", "must be provided")
+	v.Check(comment.Author != "", "author", "must be provided")
+	v.Check(len(comment.Content) <= 100, "content", "must not be more than 100 byte long")
+	v.Check(len(comment.Author) <= 25, "author", "must not be more than 25 bytes long")
 }

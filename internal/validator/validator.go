@@ -11,5 +11,19 @@ func New() *Validator {
 }
 
 func (v *Validator) IsEmpty() bool {
-	return len()
+	return len(v.Errors) == 0
+}
+
+func (v *Validator) AddError(key string, message string) {
+	_, exists := v.Errors[key]
+
+	if !exists {
+		v.Errors[key] = message
+	}
+}
+
+func (v *Validator) Check(acceptable bool, key string, message string) {
+	if !acceptable {
+		v.AddError(key, message)
+	}
 }

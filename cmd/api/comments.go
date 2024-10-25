@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	_ "github.com/thats-insane/comments/internal/data"
+	"github.com/thats-insane/comments/internal/data"
+	"github.com/thats-insane/comments/internal/validator"
 )
 
 func (a *appDependencies) createCommentHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,5 +20,20 @@ func (a *appDependencies) createCommentHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	comment := &data.Comment{
+		Content: incomingData.Content,
+		Author:  incomingData.Author,
+	}
+
+	v := validator.New()
+
+	data.ValidateComment(v, comment)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
 	fmt.Fprintf(w, "%+v\n", incomingData)
+
 }
