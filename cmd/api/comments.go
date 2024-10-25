@@ -34,6 +34,26 @@ func (a *appDependencies) createCommentHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	err = a.commentModel.Insert(comment)
+	if err != nil {
+		a.serverErrResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/comments/%d", comment.ID))
+
+	data := envelope{
+		"comment": comment,
+	}
+
+	err = a.writeJSON(w, http.StatusCreated, data, headers)
+
+	if err != nil {
+		a.serverErrResponse(w, r, err)
+		return
+	}
+
 	fmt.Fprintf(w, "%+v\n", incomingData)
 
 }
