@@ -64,6 +64,40 @@ func (c *CommentModel) Get(id int64) (*Comment, error) {
 	return &comment, nil
 }
 
+func (c *CommentModel) GetAll() ([]*Comment, error) {
+	query := `
+	SELECT id, created_at, content, author, version
+	FROM comments
+	ORDER BY id
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := c.DB.QueryContext(ctx, query)
+	defer rows.Close()
+
+	comments := []*Comment{}
+
+	for rows.Next() {
+		var comment Comment
+		err := rows.Scan(&comment.ID, &comment.CreatedAt, &comment.Content, &comment.Author, &comment.Version)
+
+		if err != nil {
+			return nil, err
+		}
+
+		comments = append(comments, &comment)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return comments, nil
+}
+
 func (c *CommentModel) Update(comment *Comment) error {
 	query := `
 		UPDATE comments
