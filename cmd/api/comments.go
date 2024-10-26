@@ -177,7 +177,16 @@ func (a *appDependencies) deleteCommentHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (a *appDependencies) listCommentsHandler(w http.ResponseWriter, r *http.Request) {
-	comments, err := a.commentModel.GetAll()
+	var queryParametersData struct {
+		Content string
+		Author  string
+	}
+
+	queryParameters := r.URL.Query()
+	queryParametersData.Content = a.getSingleQueryParameters(queryParameters, "content", "")
+	queryParametersData.Author = a.getSingleQueryParameters(queryParameters, "author", "")
+
+	comments, err := a.commentModel.GetAll(queryParametersData.Content, queryParametersData.Author)
 
 	if err != nil {
 		a.serverErrResponse(w, r, err)

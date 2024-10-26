@@ -23,8 +23,8 @@ type CommentModel struct {
 
 func (c *CommentModel) Insert(comment *Comment) error {
 	query := `
-	INSERT INTO comments (content, author)
-	VALUES ($1, $2)
+	INSERT INTO comments (content, author) 
+	VALUES ($1, $2) 
 	RETURNING id, created_at, version`
 
 	args := []any{comment.Content, comment.Author}
@@ -41,8 +41,8 @@ func (c *CommentModel) Get(id int64) (*Comment, error) {
 	}
 
 	query := `
-	SELECT id, created_at, content, author, version
-	FROM comments
+	SELECT id, created_at, content, author, version 
+	FROM comments 
 	WHERE id = $1
 	`
 
@@ -64,17 +64,21 @@ func (c *CommentModel) Get(id int64) (*Comment, error) {
 	return &comment, nil
 }
 
-func (c *CommentModel) GetAll() ([]*Comment, error) {
+func (c *CommentModel) GetAll(content string, author string) ([]*Comment, error) {
 	query := `
-	SELECT id, created_at, content, author, version
-	FROM comments
+	SELECT id, created_at, content, author, version 
+	FROM comments 
+	WHERE (to_tsvector('simple', content) @@ 
+		plainto_tsquery('simple', $1) OR $1 = '') 
+    AND (to_tsvector('simple', author) @@ 
+		plainto_tsquery('simple', $2) OR $2 = '') 
 	ORDER BY id
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := c.DB.QueryContext(ctx, query)
+	rows, err := c.DB.QueryContext(ctx, query, content, author)
 	defer rows.Close()
 
 	comments := []*Comment{}
@@ -100,10 +104,10 @@ func (c *CommentModel) GetAll() ([]*Comment, error) {
 
 func (c *CommentModel) Update(comment *Comment) error {
 	query := `
-		UPDATE comments
-		SET content = $1, author = $2, version = version + 1
-		WHERE id = $3
-		RETURNING version
+	UPDATE comments 
+	SET content = $1, author = $2, version = version + 1 
+	WHERE id = $3 
+	RETURNING version
 	`
 
 	args := []any{comment.Content, comment.Author, comment.ID}
@@ -119,7 +123,7 @@ func (c *CommentModel) Delete(id int64) error {
 	}
 
 	query := `
-	DELETE FROM comment
+	DELETE FROM comment 
 	WHERE id =$1
 	`
 

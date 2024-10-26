@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/thats-insane/comments/internal/validator"
 )
 
 type envelope map[string]any
@@ -106,4 +108,38 @@ func (a *appDependencies) readIDParam(r *http.Request) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func (a *appDependencies) getSingleQueryParameters(queryParameters url.Values, key string, defaultValue string) string {
+	result := queryParameters.Get(key)
+
+	if result == "" {
+		return defaultValue
+	}
+	return result
+}
+
+func (a *appDependencies) getMultipleQueryParameters(queryParameters url.Values, key string, defaultValue []string) []string {
+	result := queryParameters.Get(key)
+
+	if result == "" {
+		return defaultValue
+	}
+
+	return strings.Split(result, ",")
+}
+
+func (a *appDependencies) getSingleIntegerParameters(queryParameters url.Values, key string, defaultValue int, v *validator.Validator) int {
+	result := queryParameters.Get(key)
+	if result == "" {
+		return defaultValue
+	}
+
+	intValue, err := strconv.Atoi(result)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+		return defaultValue
+	}
+
+	return intValue
 }
