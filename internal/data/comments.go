@@ -21,7 +21,7 @@ type CommentModel struct {
 	DB *sql.DB
 }
 
-func (c *CommentModel) Insert(comment *Comment) error {
+func (c CommentModel) Insert(comment *Comment) error {
 	query := `
 	INSERT INTO comments (content, author) 
 	VALUES ($1, $2) 
@@ -35,7 +35,7 @@ func (c *CommentModel) Insert(comment *Comment) error {
 	return c.DB.QueryRowContext(ctx, query, args...).Scan(&comment.ID, &comment.CreatedAt, &comment.Version)
 }
 
-func (c *CommentModel) Get(id int64) (*Comment, error) {
+func (c CommentModel) Get(id int64) (*Comment, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -64,7 +64,7 @@ func (c *CommentModel) Get(id int64) (*Comment, error) {
 	return &comment, nil
 }
 
-func (c *CommentModel) GetAll(content string, author string) ([]*Comment, error) {
+func (c CommentModel) GetAll(content string, author string, filters Filters) ([]*Comment, error) {
 	query := `
 	SELECT id, created_at, content, author, version 
 	FROM comments 
@@ -73,12 +73,13 @@ func (c *CommentModel) GetAll(content string, author string) ([]*Comment, error)
     AND (to_tsvector('simple', author) @@ 
 		plainto_tsquery('simple', $2) OR $2 = '') 
 	ORDER BY id
+	LIMIT $3 OFFSET $4
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := c.DB.QueryContext(ctx, query, content, author)
+	rows, err := c.DB.QueryContext(ctx, query, content, author, filters.limit(), filters.offset())
 	defer rows.Close()
 
 	comments := []*Comment{}
@@ -102,7 +103,7 @@ func (c *CommentModel) GetAll(content string, author string) ([]*Comment, error)
 	return comments, nil
 }
 
-func (c *CommentModel) Update(comment *Comment) error {
+func (c CommentModel) Update(comment *Comment) error {
 	query := `
 	UPDATE comments 
 	SET content = $1, author = $2, version = version + 1 
@@ -117,7 +118,7 @@ func (c *CommentModel) Update(comment *Comment) error {
 	return c.DB.QueryRowContext(ctx, query, args...).Scan(&comment.Version)
 }
 
-func (c *CommentModel) Delete(id int64) error {
+func (c CommentModel) Delete(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}

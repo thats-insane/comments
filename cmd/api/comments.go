@@ -180,13 +180,25 @@ func (a *appDependencies) listCommentsHandler(w http.ResponseWriter, r *http.Req
 	var queryParametersData struct {
 		Content string
 		Author  string
+		data.Filters
 	}
 
 	queryParameters := r.URL.Query()
 	queryParametersData.Content = a.getSingleQueryParameters(queryParameters, "content", "")
 	queryParametersData.Author = a.getSingleQueryParameters(queryParameters, "author", "")
 
-	comments, err := a.commentModel.GetAll(queryParametersData.Content, queryParametersData.Author)
+	v := validator.New()
+
+	queryParametersData.Filters.Page = a.getSingleIntegerParameters(queryParameters, "page", 1, v)
+	queryParametersData.Filters.PageSize = a.getSingleIntegerParameters(queryParameters, "page_size", 10, v)
+
+	data.ValidateFilters(v, queryParametersData.Filters)
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	comments, err := a.commentModel.GetAll(queryParametersData.Content, queryParametersData.Author, queryParametersData.Filters)
 
 	if err != nil {
 		a.serverErrResponse(w, r, err)
