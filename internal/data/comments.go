@@ -17,6 +17,10 @@ type Comment struct {
 	Version   int32     `json:"version"`
 }
 
+type CommentModel struct {
+	DB *sql.DB
+}
+
 func (c *CommentModel) Insert(comment *Comment) error {
 	query := `
 	INSERT INTO comments (content, author)
@@ -58,6 +62,21 @@ func (c *CommentModel) Get(id int64) (*Comment, error) {
 		}
 	}
 	return &comment, nil
+}
+
+func (c *CommentModel) Update(comment *Comment) error {
+	query := `
+		UPDATE comments
+		SET content = $1, author = $2, version = version + 1
+		WHERE id = $3
+		RETURNING version
+	`
+
+	args := []any{comment.Content, comment.Author, comment.ID}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return c.DB.QueryRowContext(ctx, query, args...).Scan(&comment.Version)
 }
 
 func ValidateComment(v *validator.Validator, comment *Comment) {
