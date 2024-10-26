@@ -97,7 +97,7 @@ func (a *appDependencies) writeJSON(w http.ResponseWriter, status int, data enve
 	return nil
 }
 
-func (a (appDependencies) readIDParam(r *http.Request) (int64, error) {
+func (a *appDependencies) readIDParam(r *http.Request) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
