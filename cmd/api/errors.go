@@ -45,3 +45,8 @@ func (a *appDependencies) badRequestResponse(w http.ResponseWriter, r *http.Requ
 func (a *appDependencies) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
 	a.errResponseJSON(w, r, http.StatusUnprocessableEntity, errors)
 }
+
+func (a *appDependencies) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+	message := "unable to update record to due an edit conflict, try again"
+	a.errResponseJSON(w, r, http.StatusConflict, message)
+}

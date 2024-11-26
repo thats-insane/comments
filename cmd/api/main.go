@@ -28,6 +28,7 @@ type appDependencies struct {
 	config       serverConfig
 	logger       *slog.Logger
 	commentModel data.CommentModel
+	userModel    data.UserModel
 }
 
 func openDB(settings serverConfig) (*sql.DB, error) {
@@ -73,6 +74,7 @@ func main() {
 		config:       settings,
 		logger:       logger,
 		commentModel: data.CommentModel{DB: db},
+		userModel:    data.UserModel{DB: db},
 	}
 
 	apiServer := &http.Server{
