@@ -80,7 +80,10 @@ func (c CommentModel) GetAll(content string, author string, filters Filters) ([]
 	defer cancel()
 
 	rows, err := c.DB.QueryContext(ctx, query, content, author, filters.limit(), filters.offset())
-	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
 
 	comments := []*Comment{}
 
