@@ -24,6 +24,11 @@ type serverConfig struct {
 	db   struct {
 		dsn string
 	}
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 	smtp struct {
 		host     string
 		port     int
@@ -37,6 +42,8 @@ type appDependencies struct {
 	config       serverConfig
 	logger       *slog.Logger
 	commentModel data.CommentModel
+	userModel    data.UserModel
+	tokenModel   data.TokenModel
 	mailer       mailer.Mailer
 	wg           sync.WaitGroup
 }
@@ -66,11 +73,14 @@ func main() {
 	flag.IntVar(&settings.port, "port", 4000, "Server Port")
 	flag.StringVar(&settings.env, "env", "development", "Environment(Development|Staging|Production)")
 	flag.StringVar(&settings.db.dsn, "db-dsn", "postgres://comments:fishsticks@localhost/comments?sslmode=disable", "PostgreSQL DSN")
+	flag.Float64Var(&settings.limiter.rps, "limiter-rps", 2, "Rate Limiter maximum requests per second")
+	flag.IntVar(&settings.limiter.burst, "limiter-burst", 5, "Rate Limiter maximum burst")
+	flag.BoolVar(&settings.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 	flag.StringVar(&settings.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
 	flag.IntVar(&settings.smtp.port, "smtp-port", 25, "SMTP port")
-	flag.StringVar(&settings.smtp.username, "smtp-username", "a7420fc0883489", "SMTP username")
-	flag.StringVar(&settings.smtp.password, "smtp-password", "e75ffd0a3aa5ec", "SMTP password")
-	flag.StringVar(&settings.smtp.sender, "smtp-sender", "Comments Community <no-reply@commentscommunity.dalwinlewis.net>", "SMTP sender")
+	flag.StringVar(&settings.smtp.username, "smtp-username", "6b4f4a0f1e81c5", "SMTP username")
+	flag.StringVar(&settings.smtp.password, "smtp-password", "7a8cb475eeb545", "SMTP password")
+	flag.StringVar(&settings.smtp.sender, "smtp-sender", "Comments Community <no-reply@commentscommunity.2021154337.net>", "SMTP sender")
 
 	flag.Parse()
 
@@ -90,6 +100,9 @@ func main() {
 		config:       settings,
 		logger:       logger,
 		commentModel: data.CommentModel{DB: db},
+		userModel:    data.UserModel{DB: db},
+		tokenModel:   data.TokenModel{DB: db},
+		mailer:       mailer.New(settings.smtp.host, settings.smtp.port, settings.smtp.username, settings.smtp.password, settings.smtp.sender),
 	}
 
 	apiServer := &http.Server{

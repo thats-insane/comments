@@ -12,15 +12,18 @@ func (a *appDependencies) routes() http.Handler {
 	router.NotFound = http.HandlerFunc(a.notFoundResponse)
 	router.MethodNotAllowed = http.HandlerFunc(a.notAllowedResponse)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", a.healthCheckHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/comments", a.listCommentsHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.displayCommentHandler)
 
-	router.HandlerFunc(http.MethodPatch, "/v1/comments/:id", a.updateCommentHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/comments", a.requireActivatedUser(a.listCommentsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.requireActivatedUser(a.displayCommentHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/comments", a.createCommentHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/comments/:id", a.requireActivatedUser(a.updateCommentHandler))
+
+	router.HandlerFunc(http.MethodPost, "/v1/comments", a.requireActivatedUser(a.createCommentHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/users", a.registerUserHandler)
 
-	router.HandlerFunc(http.MethodDelete, "/v1/comments/:id", a.deleteCommentHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activated", a.activateUserHandler)
 
-	return a.recoverPanic(router)
+	router.HandlerFunc(http.MethodDelete, "/v1/comments/:id", a.requireActivatedUser(a.deleteCommentHandler))
+
+	return a.recoverPanic(a.rateLimit(a.authenticate(router)))
 }

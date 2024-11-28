@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"time"
@@ -9,6 +10,8 @@ import (
 	"github.com/thats-insane/comments/internal/validator"
 	"golang.org/x/crypto/bcrypt"
 )
+
+var AnonymousUser = &User{}
 
 type User struct {
 	ID        int64     `json:"id"`
@@ -27,6 +30,10 @@ type password struct {
 
 type UserModel struct {
 	DB *sql.DB
+}
+
+func (u *User) IsAnon() bool {
+	return u == AnonymousUser
 }
 
 func (u UserModel) Insert(user *User) error {
@@ -162,4 +169,36 @@ func ValidateUser(v *validator.Validator, user *User) {
 	if user.Password.hash == nil {
 		panic("missing password hash")
 	}
+}
+
+func (u UserModel) GetForToken(scope string, plaintext string) (*User, error) {
+	hash := sha256.Sum256([]byte(plaintext))
+	query := `
+		SELECT users.id, users.created_at, users.username, users.email, users.password_hash, users.activated, users.version
+        FROM users
+        INNER JOIN tokens
+        ON users.id = tokens.user_id
+        WHERE tokens.hash = $1
+        AND tokens.scope = $2 
+        AND tokens.expiry > $3
+	`
+
+	args := []any{hash[:], scope, time.Now()}
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Username, &user.Email, &user.Password.hash, &user.Activated, &user.Version)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
 }
