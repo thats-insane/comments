@@ -90,7 +90,6 @@ func main() {
 		config:       settings,
 		logger:       logger,
 		commentModel: data.CommentModel{DB: db},
-		mailer:       mailer.New(settings.smtp.host, settings.smtp.port, settings.smtp.username, settings.smtp.password, settings.smtp.sender),
 	}
 
 	apiServer := &http.Server{
