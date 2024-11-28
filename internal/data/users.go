@@ -150,7 +150,7 @@ func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email")
 }
 
-func ValidatePlaintext(v *validator.Validator, password string) {
+func ValidatePasswordPlaintext(v *validator.Validator, password string) {
 	v.Check(password != "", "password", "must be provided")
 	v.Check(len(password) >= 8, "password", "must be at least 8 bytes")
 	v.Check(len(password) <= 72, "password", "must be less than 72 bytes")
@@ -163,7 +163,7 @@ func ValidateUser(v *validator.Validator, user *User) {
 	ValidateEmail(v, user.Email)
 
 	if user.Password.plaintext != nil {
-		ValidatePlaintext(v, *user.Password.plaintext)
+		ValidatePasswordPlaintext(v, *user.Password.plaintext)
 	}
 
 	if user.Password.hash == nil {

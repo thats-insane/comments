@@ -95,7 +95,7 @@ func (a *appDependencies) activateUserHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	v := validator.New()
-	data.ValidatePlaintext(v, incomingData.TokenPlaintext)
+	data.ValidateTokenPlaintext(v, incomingData.TokenPlaintext)
 	if !v.IsEmpty() {
 		a.failedValidationResponse(w, r, v.Errors)
 		return

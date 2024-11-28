@@ -89,20 +89,20 @@ func (a *appDependencies) authenticate(next http.Handler) http.Handler {
 			return
 		}
 		headerParts := strings.Split(authorizationHeader, " ")
-		if len((headerParts) != 2 || headerParts[0] != "Bearer") {
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
 			a.invalidAuthorizationToken(w, r)
 			return
 		}
 		token := headerParts[1]
 		v := validator.New()
 
-		data.ValidatePlaintext(v, token)
+		data.ValidateTokenPlaintext(v, token)
 		if !v.IsEmpty() {
 			a.invalidAuthorizationToken(w, r)
 			return
 		}
 
-		user, err := a.userModel.GetForToken(data.ScopeAuthentication, token)
+		user, err := a.userModel.GetForToken(data.ScopeActivation, token)
 		if err != nil {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
