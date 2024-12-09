@@ -13,17 +13,17 @@ func (a *appDependencies) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(a.notAllowedResponse)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", a.healthCheckHandler)
 
-	router.HandlerFunc(http.MethodGet, "/v1/comments", a.requireActivatedUser(a.listCommentsHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.requireActivatedUser(a.displayCommentHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/comments", a.requirePermission("comments:read", a.listCommentsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/comments/:id", a.requirePermission("comments:read", a.displayCommentHandler))
 
-	router.HandlerFunc(http.MethodPatch, "/v1/comments/:id", a.requireActivatedUser(a.updateCommentHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/comments/:id", a.requirePermission("comments:write", a.updateCommentHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/comments", a.requireActivatedUser(a.createCommentHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/comments", a.requirePermission("comments:write", a.createCommentHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/users", a.registerUserHandler)
 
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", a.activateUserHandler)
 
-	router.HandlerFunc(http.MethodDelete, "/v1/comments/:id", a.requireActivatedUser(a.deleteCommentHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/comments/:id", a.requirePermission("comments:write", a.deleteCommentHandler))
 
-	return a.recoverPanic(a.rateLimit(a.authenticate(router)))
+	return a.recoverPanic(a.enableCORS(a.rateLimit(a.authenticate(router))))
 }

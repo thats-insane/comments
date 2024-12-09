@@ -56,6 +56,12 @@ func (a *appDependencies) registerUserHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	err = a.permsModel.Add(user.ID, "comments:read")
+	if err != nil {
+		a.serverErrResponse(w, r, err)
+		return
+	}
+
 	token, err := a.tokenModel.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
 	if err != nil {
 		a.serverErrResponse(w, r, err)

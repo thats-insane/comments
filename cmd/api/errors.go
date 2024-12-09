@@ -71,3 +71,8 @@ func (a *appDependencies) inactiveAccountResponse(w http.ResponseWriter, r *http
 	message := "your user account must be activated to access this resource"
 	a.errResponseJSON(w, r, http.StatusForbidden, message)
 }
+
+func (a *appDependencies) notPermittedResponse(w http.ResponseWriter, r *http.Request) {
+	message := "your account does not have the necessary permissions to access this resource"
+	a.errResponseJSON(w, r, http.StatusForbidden, message)
+}

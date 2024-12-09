@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,6 +37,9 @@ type serverConfig struct {
 		password string
 		sender   string
 	}
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 type appDependencies struct {
@@ -44,6 +48,7 @@ type appDependencies struct {
 	commentModel data.CommentModel
 	userModel    data.UserModel
 	tokenModel   data.TokenModel
+	permsModel   data.PermsModel
 	mailer       mailer.Mailer
 	wg           sync.WaitGroup
 }
@@ -81,7 +86,10 @@ func main() {
 	flag.StringVar(&settings.smtp.username, "smtp-username", "6b4f4a0f1e81c5", "SMTP username")
 	flag.StringVar(&settings.smtp.password, "smtp-password", "7a8cb475eeb545", "SMTP password")
 	flag.StringVar(&settings.smtp.sender, "smtp-sender", "Comments Community <no-reply@commentscommunity.2021154337.net>", "SMTP sender")
-
+	flag.Func("cors-trusted-origins", "Trusted CORS origins", func(s string) error {
+		settings.cors.trustedOrigins = strings.Fields(s)
+		return nil
+	})
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -102,6 +110,7 @@ func main() {
 		commentModel: data.CommentModel{DB: db},
 		userModel:    data.UserModel{DB: db},
 		tokenModel:   data.TokenModel{DB: db},
+		permsModel:   data.PermsModel{DB: db},
 		mailer:       mailer.New(settings.smtp.host, settings.smtp.port, settings.smtp.username, settings.smtp.password, settings.smtp.sender),
 	}
 
